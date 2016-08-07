@@ -37,11 +37,6 @@ public class HelloWorldApp extends JFrame {
 
     public static void main(String[] args) {
         final HelloWorldApp app = new HelloWorldApp();
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                app.createAndShowGUI();
-            }
-        });
+        SwingUtilities.invokeLater(() -> app.createAndShowGUI());
     }
 }
