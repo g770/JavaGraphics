@@ -1,8 +1,10 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
 
-import static java.lang.Thread.sleep;
 
 public class SimpleVectorGraphics extends JFrame implements Runnable {
 
@@ -36,7 +38,7 @@ public class SimpleVectorGraphics extends JFrame implements Runnable {
         Canvas canvas = new Canvas();
         canvas.setSize(640, 480);
         canvas.setBackground(Color.BLACK);
-        canvas.setIgnoreRepaint(true)
+        canvas.setIgnoreRepaint(true);
         getContentPane().add(canvas);
         setTitle("Vector Graphics Example");
         setIgnoreRepaint(true);
@@ -126,5 +128,131 @@ public class SimpleVectorGraphics extends JFrame implements Runnable {
         doXShear = doYShear = false;
     }
 
+    private void processInput() {
+        keyboard.poll();
+        mouse.poll();
+
+        if(keyboard.keyDownOnce(KeyEvent.VK_R)) {
+            doRotate = !doRotate;
+        }
+
+        if(keyboard.keyDownOnce(KeyEvent.VK_S)) {
+            doScale = !doScale;
+        }
+
+        if(keyboard.keyDownOnce(KeyEvent.VK_T)) {
+            doTranslate = !doTranslate;
+        }
+
+        if(keyboard.keyDownOnce(KeyEvent.VK_X)) {
+            doXShear = !doXShear;
+        }
+
+        if(keyboard.keyDownOnce(KeyEvent.VK_Y)) {
+            doYShear = !doYShear;
+        }
+
+        if(keyboard.keyDownOnce(KeyEvent.VK_SPACE)) {
+            reset();
+        }
+    }
+
+    private void processObjects() {
+
+        // copy objects
+        for(int i = 0; i < polygon.length; ++i) {
+            world[i] = new Vector2f(polygon[i]);
+        }
+
+        if(doScale) {
+            scale += scaleStep;
+            if(scale < 1.0 || scale > 5.0) {
+                scaleStep = -scaleStep;
+            }
+        }
+
+        if(doRotate) {
+            rot += rotStep;
+            if(rot < 0.0f || rot > 2*Math.PI) {
+                rotStep = -rotStep;
+            }
+        }
+
+        if(doTranslate) {
+            tx += vx;
+            if(tx < 0 || tx > SCREEN_W) {
+                vx = -vx;
+            }
+
+            ty += vy;
+            if(ty < 0 || ty > SCREEN_H) {
+                vy = -vy;
+            }
+        }
+
+        if(doXShear) {
+            sx += sxStep;
+            if(Math.abs(sx) > 2.0) {
+                sxStep = -sxStep;
+            }
+        }
+
+        if(doYShear) {
+            sy += syStep;
+            if(Math.abs(sy) > 2.0) {
+                syStep = -syStep;
+            }
+        }
+
+        for(int i = 0; i < world.length; ++i) {
+            world[i].shear(sx, sy);
+            world[i].scale(scale, scale);
+            world[i].rotate(rot);
+            world[i].translate(tx, ty);
+        }
+    }
+
+    private void render(Graphics g) {
+        g.setFont(new Font("Courier New", Font.PLAIN, 12));
+        g.setColor(Color.GREEN);
+        frameRate.calculate();
+        g.drawString(frameRate.getFrameRate(), 20, 20);
+        g.drawString("Translate(T): " + doTranslate, 20, 35);
+        g.drawString("Rotate(R): " + doRotate, 20, 50);
+        g.drawString("Scale(S): " + doScale, 20, 65);
+        g.drawString("X-Shear(X): " + doXShear, 20, 80);
+        g.drawString("Y-Shear(Y): " + doYShear, 20, 95);
+        g.drawString("Press [SPACE] to reset", 20, 110);
+
+        Vector2f S = world[world.length - 1];
+        Vector2f P = null;
+        for(int i = 0; i < world.length; ++i) {
+            P = world[i];
+            g.drawLine((int)S.x, (int)S.y, (int)P.x, (int)P.y);
+            S = P;
+        }
+    }
+
+    protected void onWindowClosing() {
+        try {
+            running = false;
+            gameThread.join();
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.exit(0);
+    }
+
+    public static void main(String[] args) {
+        final SimpleVectorGraphics app = new SimpleVectorGraphics();
+        app.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                app.onWindowClosing();
+            }
+        });
+
+        SwingUtilities.invokeLater(new Runnable() { public void run() { app.createAndShowGUI();}});
+    }
 
 }

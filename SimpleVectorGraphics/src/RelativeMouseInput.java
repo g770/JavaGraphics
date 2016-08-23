@@ -49,7 +49,7 @@ public class RelativeMouseInput implements MouseListener, MouseMotionListener, M
             if (mouse[i]) {
                 polled[i]++;
             } else {
-                polled[i] = 0
+                polled[i] = 0;
             }
         }
     }
